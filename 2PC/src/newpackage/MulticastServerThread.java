@@ -13,13 +13,14 @@ public class MulticastServerThread extends QuoteServerThread {
     private final long FIVE_SECONDS = 5000;
     private final String message = "Melding nr. ";
     private int nr = 1;
-    private ServerSocket responseSocket = new ServerSocket(1250);
-    private int nodes = 0;
+    private static ServerSocket responseSocket;
+    private static int nodes = 0;
     private static ArrayList<String> responses = new ArrayList<String>();
     private boolean commit = true;
 
     public MulticastServerThread() throws IOException {
         super("MulticastServerThread");
+        responseSocket = new ServerSocket(1250);
     }
 
     public static synchronized void addResponse(String resp) {
@@ -58,8 +59,63 @@ public class MulticastServerThread extends QuoteServerThread {
             DatagramPacket packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
             System.out.println("Forspørsel er sendt...");
+            getResponses();
+            System.out.println("Alle responser er mottatt...");
+            System.out.println("Responser: ");
+            for (int j = 0; j < nodes; j++) {
+                System.out.println(" " + responses.get(j));
+                if (responses.get(j).equals("no")) {
+                    commit = false;
+                }
+            }
+            responses = new ArrayList<String>();
+            if (commit) {
+                System.out.println("Gir klarsignal for commit...");
+                String goForIt = "commit";
+                buf = goForIt.getBytes();
+                packet = new DatagramPacket(buf, buf.length, group, 4446);
+                socket.send(packet);
+                getResponses();
+                System.out.println("Alle responser er mottatt...");
+                System.out.println("Responser: ");
+                for (int j = 0; j < nodes; j++) {
+                    System.out.println(" " + responses.get(j));
+                    if (responses.get(j).equals("no")) {
+                        commit = false;
+                    }
+                }
+            } else {
+                System.out.println("Ber alle noder om å avbryte og rulle tilbake...");
+                String dontDoIt = "abort";
+                buf = dontDoIt.getBytes();
+                packet = new DatagramPacket(buf, buf.length, group, 4446);
+                socket.send(packet);
+                getResponses();
+                System.out.println("Alle responser er mottatt...");
+                System.out.println("Responser: ");
+                for (int j = 0; j < nodes; j++) {
+                    System.out.println(" " + responses.get(j));
+                    if (responses.get(j).equals("no")) {
+                        commit = false;
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            if (e.getMessage().contains("Accept timed out")) {
+                System.out.println("Timeout...avbryter..");
+            } else {
+                System.err.println(e);
+            }
+        } finally {
+            socket.close();
+        }
+    }
+
+    public static void getResponses() {
+        try {
             int teller = 0;
-            System.out.println("Venter på response fra alle noder...");
+            System.out.println("Venter på respons fra alle noder...");
             responseSocket.setSoTimeout(5000);
             while (teller < nodes) {
                 Socket connection = responseSocket.accept();// venter inntil noen tar kontakt
@@ -74,28 +130,13 @@ public class MulticastServerThread extends QuoteServerThread {
 
                 waitTime++;
             }
-            System.out.println("Alle responser er mottatt...");
-            System.out.println("Responser: ");
-            for (int j = 0; j < nodes; j++) {
-                System.out.println(" " + responses.get(j));
-                if (responses.get(j).equals("no")) {
-                    commit = false;
-                }
-            }
-            if (commit) {
-                System.out.println("Klarsignal for commit...");
-            }else{
-                System.out.println("Avbryter...");
-            }
-
-        } catch (InterruptedException | IOException e ) {
-            if(e.getMessage().contains("Accept timed out")){
+        } catch (InterruptedException | IOException e) {
+            if (e.getMessage().contains("Accept timed out")) {
                 System.out.println("Timeout...avbryter..");
-            }else{
-            System.err.println(e);
+            } else {
+                System.err.println(e);
             }
-        } finally {
-            socket.close();
         }
+
     }
 }

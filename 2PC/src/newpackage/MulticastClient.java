@@ -37,6 +37,23 @@ public class MulticastClient {
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
                 }
+                else if(received.equals("commit")){
+                    System.out.println("Koordinator sier det er klart for å utføre oppgaven...");
+                    System.out.println("Utfører oppgaven...");
+                    System.out.println("Varsler koordinator om at jeg er ferdig...");
+                    Socket connection = new Socket("localhost", 1250);
+                    PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
+                    writer.println("done");
+                    
+                }
+                else if(received.equals("abort")){
+                    System.out.println("Koordinator sier at oppgaven skal avbrytes og rullestilbake...");
+                    System.out.println("Avbryter...");
+                    System.out.println("Varsler koordinator om at har avbrutt oppgaven...");
+                    Socket connection = new Socket("localhost", 1250);
+                    PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
+                    writer.println("aborted");
+                }
             }
         } finally {
             socket.leaveGroup(address);
