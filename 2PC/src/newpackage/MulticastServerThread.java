@@ -60,6 +60,7 @@ public class MulticastServerThread extends QuoteServerThread {
             System.out.println("Forspørsel er sendt...");
             int teller = 0;
             System.out.println("Venter på response fra alle noder...");
+            responseSocket.setSoTimeout(5000);
             while (teller < nodes) {
                 Socket connection = responseSocket.accept();// venter inntil noen tar kontakt
                 ThreadResponseHandler th = new ThreadResponseHandler(connection);
@@ -87,8 +88,12 @@ public class MulticastServerThread extends QuoteServerThread {
                 System.out.println("Avbryter...");
             }
 
-        } catch (InterruptedException | IOException e) {
+        } catch (InterruptedException | IOException e ) {
+            if(e.getMessage().contains("Accept timed out")){
+                System.out.println("Timeout...avbryter..");
+            }else{
             System.err.println(e);
+            }
         } finally {
             socket.close();
         }
