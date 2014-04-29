@@ -34,7 +34,7 @@ public class MulticastClient {
             String received = new String(packet.getData(), 0, packet.getLength());
             System.out.println("Melding mottat:" + received);
             System.out.println("Kviterer..");
-            Socket connection = new Socket("Sindre-PC", 1250);
+            Socket connection = new Socket("localhost", 1250);
             PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
             writer.println(id+" "+received);
 
