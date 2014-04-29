@@ -21,20 +21,22 @@ public class MulticastClient {
 
         // get a few quotes
         try {
-            for (int i = 0; i < 10; i++) {
+            boolean run = true;
+            while (run) {
 
                 byte[] buf = new byte[256];
                 packet = new DatagramPacket(buf, buf.length);
-                System.out.println("Venter på pakke");
+                System.out.println("Venter på forespørsel fra koordinator...");
                 socket.receive(packet);
-
                 String received = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("Melding mottat:" + received);
-                System.out.println("Kviterer..");
-                Socket connection = new Socket("localhost", 1250);
-                PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
-                writer.println(id + " " + received);
-
+                System.out.println("Forespørsel mottatt...");
+                if (received.equals("ready?")) {
+                    System.out.println("Koordinator spør om jeg er klar til å utføre instruks...");
+                    System.out.println("Jeg er klar, og gir respons til koordinator...");
+                    Socket connection = new Socket("localhost", 1250);
+                    PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
+                    writer.println("yes");
+                }
             }
         } finally {
             socket.leaveGroup(address);
