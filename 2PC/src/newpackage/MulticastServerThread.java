@@ -17,6 +17,8 @@ public class MulticastServerThread extends QuoteServerThread {
     private static int nodes = 0;
     private static ArrayList<String> responses = new ArrayList<String>();
     private boolean commit = true;
+    
+    private static boolean isResponse = true;
 
     public MulticastServerThread() throws IOException {
         super("MulticastServerThread");
@@ -60,6 +62,9 @@ public class MulticastServerThread extends QuoteServerThread {
             socket.send(packet);
             System.out.println("Forspørsel er sendt...");
             getResponses();
+            System.out.print("check1.1 for isResp : ");
+            System.out.println(isResponse);
+            if(isResponse){
             System.out.println("Alle responser er mottatt...");
             System.out.println("Responser: ");
             for (int j = 0; j < nodes; j++) {
@@ -67,6 +72,7 @@ public class MulticastServerThread extends QuoteServerThread {
                 if (responses.get(j).equals("no")) {
                     commit = false;
                 }
+            }
             }
             responses = new ArrayList<String>();
             if (commit) {
@@ -76,6 +82,9 @@ public class MulticastServerThread extends QuoteServerThread {
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
                 socket.send(packet);
                 getResponses();
+                System.out.print("check2 for isResp : ");
+                System.out.println(isResponse);
+                if(isResponse){
                 System.out.println("Alle responser er mottatt...");
                 System.out.println("Responser: ");
                 for (int j = 0; j < nodes; j++) {
@@ -83,6 +92,7 @@ public class MulticastServerThread extends QuoteServerThread {
                     if (responses.get(j).equals("no")) {
                         commit = false;
                     }
+                }
                 }
             } else {
                 System.out.println("Ber alle noder om å avbryte og rulle tilbake...");
@@ -91,6 +101,8 @@ public class MulticastServerThread extends QuoteServerThread {
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
                 socket.send(packet);
                 getResponses();
+                System.out.print("check3 for isResp : ");
+                System.out.println(isResponse);
                 System.out.println("Alle responser er mottatt...");
                 System.out.println("Responser: ");
                 for (int j = 0; j < nodes; j++) {
@@ -99,6 +111,7 @@ public class MulticastServerThread extends QuoteServerThread {
                         commit = false;
                     }
                 }
+                
             }
 
         } catch (IOException e) {
@@ -117,6 +130,9 @@ public class MulticastServerThread extends QuoteServerThread {
             int teller = 0;
             System.out.println("Venter på respons fra alle noder...");
             responseSocket.setSoTimeout(5000);
+            
+            System.out.println("check1 for isResp : " + isResponse);
+            
             while (teller < nodes) {
                 Socket connection = responseSocket.accept();// venter inntil noen tar kontakt
                 ThreadResponseHandler th = new ThreadResponseHandler(connection);
@@ -132,7 +148,8 @@ public class MulticastServerThread extends QuoteServerThread {
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                System.out.println("Timeout...avbryter..");
+                System.out.println("Timeout...avbryter..2");
+                isResponse = false;
             } else {
                 System.err.println(e);
             }
