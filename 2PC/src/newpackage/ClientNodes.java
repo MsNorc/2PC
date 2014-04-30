@@ -24,52 +24,53 @@ public class ClientNodes {
         socket.joinGroup(address);
 
         DatagramPacket packet;
-        double id = Math.random();
-
-        // get a few quotes
+        
+        ClientNodesGUI gui = new ClientNodesGUI();
+        gui.setVisible(true);
+        
         try {
             boolean run = true;
             while (run) {
 
                 byte[] buf = new byte[256];
                 packet = new DatagramPacket(buf, buf.length);
-                System.out.println("Standby for ready check...");
+                ClientNodesGUI.textArea.append("Awaiting request..."+"\n");
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("Ready check received...");
+                ClientNodesGUI.textArea.append("Ready check received..."+"\n");
                 if (received.equals("ready?")) {
-                    System.out.println("Coordinator asks if client is ready for task execution...");
-                    System.out.println("Client ready, signaling coordinator...");
+                    ClientNodesGUI.textArea.append("Coordinator asks if client is ready for task execution..."+"\n");
+                    ClientNodesGUI.textArea.append("Client ready, signaling coordinator..."+"\n");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
-                    System.out.println("Prepering execution...");
+                    ClientNodesGUI.textArea.append("Prepering execution..."+"\n");
                     fw = new FileWriter(fileName, true);
                     bw = new BufferedWriter(fw);
 
                 } else if (received.contains("task")) {
                     textToBeWrittenToFile = received.substring(5);
-                    System.out.println("Task received : " + textToBeWrittenToFile);
+                    ClientNodesGUI.textArea.append("Task received : " + textToBeWrittenToFile +"\n");
                 } else if (received.equals("commit")) {
-                    System.out.println("Coordinator signaling ready for task commit...");
-                    System.out.println("Executing...");
-                    System.out.println("Write to file : " + textToBeWrittenToFile);
+                    ClientNodesGUI.textArea.append("Coordinator signaling ready for task commit..."+"\n");
+                    ClientNodesGUI.textArea.append("Executing...");
+                    ClientNodesGUI.textArea.append("Write to file : " + textToBeWrittenToFile +"\n");
                     
                     bw.write(textToBeWrittenToFile);
                     bw.newLine();
                     bw.flush();
-                    System.out.println("Task complete, signaling coordinator...");
+                    ClientNodesGUI.textArea.append("Task complete, signaling coordinator..." +"\n");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("done");
 
                 } else if (received.equals("abort")) {
-                    System.out.println("Rollback command received...");
-                    System.out.println("Abort...");
+                    ClientNodesGUI.textArea.append("Rollback command received..."+"\n");
+                    ClientNodesGUI.textArea.append("Abort..."+"\n");
                     textToBeWrittenToFile = null;
                     fw = null;
                     bw = null;
-                    System.out.println("Signaling coordinator, task aborted...");
+                    ClientNodesGUI.textArea.append("Signaling coordinator, task aborted..."+"\n");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("aborted");

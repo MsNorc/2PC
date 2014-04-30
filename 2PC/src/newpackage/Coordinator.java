@@ -55,24 +55,27 @@ public class Coordinator {
         group = InetAddress.getByName("230.0.0.1");
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
-        
+        CoordinatorGUI gui = new CoordinatorGUI();
+        gui.setVisible(true);
         String nodesText = JOptionPane.showInputDialog("Input number of nodes:");
         nodes = Integer.parseInt(nodesText);
 
         try {
-            System.out.println("Initializing in 5 seconds...");
+            
+            CoordinatorGUI.textArea.append("Initializing in 5 seconds..."+"\n");
             sleep(5000);
-            System.out.println("Startup two-phase commit protocol...");
+            CoordinatorGUI.textArea.append("Startup two-phase commit protocol..."+"\n");
+            
 
             while (abortCounter < maxAborts && !commit) {
-                System.out.println("Initializing..");
+                CoordinatorGUI.textArea.append("Commencing preparation phase..."+"\n");
                 prepareNodes();
             }
 
             if (commit) {
                 commit();
             } else {
-                System.out.println("Initializing with errors...");
+                CoordinatorGUI.textArea.append("Commenizing completion phase with failures..."+"\n");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -91,7 +94,7 @@ public class Coordinator {
         responses = new ArrayList<String>();
         try {
             int counter = 0;
-            System.out.println("Waiting for response from nodes...");
+            CoordinatorGUI.textArea.append("Waiting for response from nodes..."+"\n");
             responseSocket.setSoTimeout(5000);
             while (counter < nodes) {
 
@@ -109,11 +112,11 @@ public class Coordinator {
                 hasResponse = true;
             }
             if (hasResponse) {
-                System.out.println("Every node responded...");
+                CoordinatorGUI.textArea.append("Every node responded..."+"\n");
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                System.out.println("Timeout...");
+                CoordinatorGUI.textArea.append("Timeout..."+"\n");
                 timeout = true;
                 hasResponse = false;
                 abort();
@@ -126,19 +129,19 @@ public class Coordinator {
 
     public static void prepareNodes() {
         try {
-            System.out.println("Startup phase...");
-            System.out.println("Transmitting ready checks...");
+            CoordinatorGUI.textArea.append("Startup phase..."+"\n");
+            CoordinatorGUI.textArea.append("Transmitting ready checks..."+"\n");
             String ready = "ready?";
 
             buf = ready.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
-            System.out.println("Ready checks sent...");
+            CoordinatorGUI.textArea.append("Ready checks sent..."+"\n");
             getResponses();
             if (hasResponse) {
-                System.out.println("Responses from nodes: ");
+                CoordinatorGUI.textArea.append("Responses from nodes: "+"\n");
                 for (int j = 0; j < nodes; j++) {
-                    System.out.println(" " + responses.get(j));
+                    CoordinatorGUI.textArea.append(" " + responses.get(j)+"\n");
                     if (responses.get(j).equals("no")) {
                         nodesReady = false;
                     }
@@ -162,18 +165,18 @@ public class Coordinator {
 
     public static void commit() {
         try {
-            System.out.println("Every node responded...");
-            System.out.println("Successfully starting execution phase...");
-            System.out.println("Signaling for commit...");
+            CoordinatorGUI.textArea.append("Every node responded..."+"\n");
+            CoordinatorGUI.textArea.append("Commenizing completion phase with succses..."+"\n");
+            CoordinatorGUI.textArea.append("Signaling for commit..."+"\n");
             String goForIt = "commit";
             buf = goForIt.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
             getResponses();
             if (hasResponse) {
-                System.out.println("Execution responses: ");
+                CoordinatorGUI.textArea.append("Execution responses: "+"\n");
                 for (int j = 0; j < nodes; j++) {
-                    System.out.println(" " + responses.get(j));
+                    CoordinatorGUI.textArea.append(" " + responses.get(j)+"\n");
 
                 }
                 if (responses.size() < nodes) {
@@ -186,17 +189,17 @@ public class Coordinator {
     }
 
     public static void abort() {
-        System.out.println("One or more nodes did not respond...");
+        CoordinatorGUI.textArea.append("One or more nodes did not respond..."+"\n");
         
         if (abortCounter >= maxAborts) {
-            System.out.println("Reached maximum number of timeouts, or rejected by a node...");
-            System.out.println("Logging errors...");
+            CoordinatorGUI.textArea.append("Reached maximum number of timeouts, or rejected by a node..."+"\n");
+            CoordinatorGUI.textArea.append("Logging errors..."+"\n");
         } else {
             try {
                 
                 abortCounter++;
                 int tempNodes = nodes;
-                System.out.println("Rollback command to each node...");
+                CoordinatorGUI.textArea.append("Rollback command to each node..."+"\n");
                 String dontDoIt = "abort";
                 buf = dontDoIt.getBytes();
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -207,9 +210,9 @@ public class Coordinator {
                 getResponses();
 
                 if (hasResponse) {
-                    System.out.println("Abort responses:");
+                    CoordinatorGUI.textArea.append("Abort responses:"+"\n");
                     for (int j = 0; j < nodes; j++) {
-                        System.out.println(" " + responses.get(j));
+                        CoordinatorGUI.textArea.append(" " + responses.get(j)+"\n");
 
                     }
                     if (responses.size() < nodes) {
