@@ -8,9 +8,9 @@ package newpackage;
 import java.io.*;
 import java.net.*;
 
-public class KlientNoder {
+public class ClientNodes1 {
 
-    private static String fileName = "text1.txt";
+    private static String fileName = "text2.txt";
     private static FileWriter fw;
     private static BufferedWriter bw;
     private static FileReader fr;
@@ -33,43 +33,44 @@ public class KlientNoder {
 
                 byte[] buf = new byte[256];
                 packet = new DatagramPacket(buf, buf.length);
-                System.out.println("Venter på forespørsel fra koordinator...");
+                System.out.println("Standy, awaits ready check from coordinator...");
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("Forespørsel mottatt...");
+                System.out.println("ready check received...");
                 if (received.equals("ready?")) {
-                    System.out.println("Koordinator spør om jeg er klar til å utføre instruks...");
-                    System.out.println("Jeg er klar, og gir respons til koordinator...");
+                    System.out.println("Coordinator asks if client is ready for task execution...");
+                    System.out.println("Client ready, sending response to coordinator...");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
-                    System.out.println("Jeg forbereder meg til utførelse...");
+                    System.out.println("Preparing execution...");
                     fw = new FileWriter(fileName, true);
                     bw = new BufferedWriter(fw);
 
                 } else if (received.contains("task")) {
                     textToBeWrittenToFile = received.substring(5);
-                    System.out.println("Jeg mottok oppgaven: " + textToBeWrittenToFile);
+                    System.out.println("Task received : " + textToBeWrittenToFile);
                 } else if (received.equals("commit")) {
-                    System.out.println("Koordinator sier det er klart for å utføre oppgaven...");
-                    System.out.println("Utfører oppgaven...");
-                    System.out.println("Jeg skriver dette til fil: " + textToBeWrittenToFile);
-                    
+                    System.out.println("Coordinator is signaling ready for task commit...");
+                    System.out.println("Executing task...");
+                    System.out.println("Writing to file : " + textToBeWrittenToFile);
+                   
                     bw.write(textToBeWrittenToFile);
                     bw.newLine();
                     bw.flush();
-                    System.out.println("Varsler koordinator om at jeg er ferdig...");
+
+                    System.out.println("Task complete, signaling coordinator...");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("done");
 
                 } else if (received.equals("abort")) {
-                    System.out.println("Koordinator sier at oppgaven skal avbrytes og rullestilbake...");
-                    System.out.println("Avbryter...");
+                    System.out.println("Rollback command received...");
+                    System.out.println("Abort...");
                     textToBeWrittenToFile = null;
                     fw = null;
                     bw = null;
-                    System.out.println("Varsler koordinator om at har avbrutt oppgaven...");
+                    System.out.println("Signaling coordinator, task aborted...");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("aborted");

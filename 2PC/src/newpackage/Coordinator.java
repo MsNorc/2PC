@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
-public class Koordinator {
+public class Coordinator {
 
     private final long FIVE_SECONDS = 5000;
     private final String message = "Melding nr. ";
@@ -56,23 +56,23 @@ public class Koordinator {
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         
-        String nodesText = JOptionPane.showInputDialog("Antall noder:");
+        String nodesText = JOptionPane.showInputDialog("Input number of nodes:");
         nodes = Integer.parseInt(nodesText);
 
         try {
-            System.out.println("Oppstart om 5 sekund...");
+            System.out.println("Initializing in 5 seconds...");
             sleep(5000);
-            System.out.println("Starter to-fase-commit-protokoll...");
+            System.out.println("Startup two-phase commit protocol...");
 
             while (abortCounter < maxAborts && !commit) {
-                System.out.println("Starter forberedelsesfasen..");
+                System.out.println("Initializing..");
                 prepareNodes();
             }
 
             if (commit) {
                 commit();
             } else {
-                System.out.println("Starter utførelsesfasen med svikt...");
+                System.out.println("Initializing with errors...");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -91,7 +91,7 @@ public class Koordinator {
         responses = new ArrayList<String>();
         try {
             int counter = 0;
-            System.out.println("Venter på respons fra alle noder...");
+            System.out.println("Waiting for response from nodes...");
             responseSocket.setSoTimeout(5000);
             while (counter < nodes) {
 
@@ -109,11 +109,11 @@ public class Koordinator {
                 hasResponse = true;
             }
             if (hasResponse) {
-                System.out.println("Alle responser er mottatt...");
+                System.out.println("Every node responded...");
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                System.out.println("Fikk timeout...");
+                System.out.println("Timeout...");
                 timeout = true;
                 hasResponse = false;
                 abort();
@@ -126,17 +126,17 @@ public class Koordinator {
 
     public static void prepareNodes() {
         try {
-            System.out.println("Er i forberedelsesfasen...");
-            System.out.println("Sender ut forespørsel om klartilstand til noder...");
+            System.out.println("Startup phase...");
+            System.out.println("Transmitting ready checks...");
             String ready = "ready?";
 
             buf = ready.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
-            System.out.println("Forspørsel om noder er klare, er sendt...");
+            System.out.println("Ready checks sent...");
             getResponses();
             if (hasResponse) {
-                System.out.println("Responser om noder er klare: ");
+                System.out.println("Responses from nodes: ");
                 for (int j = 0; j < nodes; j++) {
                     System.out.println(" " + responses.get(j));
                     if (responses.get(j).equals("no")) {
@@ -162,16 +162,16 @@ public class Koordinator {
 
     public static void commit() {
         try {
-            System.out.println("Alle noder er klare...");
-            System.out.println("Starter utførelsesfasen med suksess...");
-            System.out.println("Gir klarsignal for commit...");
+            System.out.println("Every node responded...");
+            System.out.println("Successfully starting execution phase...");
+            System.out.println("Signaling for commit...");
             String goForIt = "commit";
             buf = goForIt.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
             getResponses();
             if (hasResponse) {
-                System.out.println("Responser om utførelse: ");
+                System.out.println("Execution responses: ");
                 for (int j = 0; j < nodes; j++) {
                     System.out.println(" " + responses.get(j));
 
@@ -186,17 +186,17 @@ public class Koordinator {
     }
 
     public static void abort() {
-        System.out.println("En eller flere noder sa at det ikke var klare eller svarte ikke...");
+        System.out.println("One or more nodes did not respond...");
         
         if (abortCounter >= maxAborts) {
-            System.out.println("Har nådd maks antall timeouts eller avslag fra noder...");
-            System.out.println("Logger at oppgave ikke blir utført...");
+            System.out.println("Reached maximum number of timeouts, or rejected by a node...");
+            System.out.println("Logging errors...");
         } else {
             try {
                 
                 abortCounter++;
                 int tempNodes = nodes;
-                System.out.println("Ber alle noder om å avbryte og rulle tilbake...");
+                System.out.println("Rollback command to each node...");
                 String dontDoIt = "abort";
                 buf = dontDoIt.getBytes();
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -207,7 +207,7 @@ public class Koordinator {
                 getResponses();
 
                 if (hasResponse) {
-                    System.out.println("Responser om avbrytelse:");
+                    System.out.println("Abort responses:");
                     for (int j = 0; j < nodes; j++) {
                         System.out.println(" " + responses.get(j));
 
