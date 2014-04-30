@@ -26,7 +26,7 @@ public class ThreadResponseHandler extends Thread {
         
         String aLine = reader.readLine();  // mottar en linje med tekst
         
-        MulticastServerThread.addResponse(aLine);
+        Koordinator.addResponse(aLine);
         
         /* Lukker koblinger */
         reader.close();

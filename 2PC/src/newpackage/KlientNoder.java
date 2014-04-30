@@ -8,7 +8,7 @@ package newpackage;
 import java.io.*;
 import java.net.*;
 
-public class MulticastClient {
+public class KlientNoder {
 
     public static void main(String[] args) throws IOException {
 
