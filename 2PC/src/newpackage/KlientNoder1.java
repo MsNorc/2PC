@@ -8,9 +8,9 @@ package newpackage;
 import java.io.*;
 import java.net.*;
 
-public class KlientNoder {
+public class KlientNoder1 {
 
-    private static String fileName = "text1.txt";
+    private static String fileName = "text2.txt";
     private static FileWriter fw;
     private static BufferedWriter bw;
     private static FileReader fr;
@@ -54,10 +54,11 @@ public class KlientNoder {
                     System.out.println("Koordinator sier det er klart for å utføre oppgaven...");
                     System.out.println("Utfører oppgaven...");
                     System.out.println("Jeg skriver dette til fil: " + textToBeWrittenToFile);
-                    
+                   
                     bw.write(textToBeWrittenToFile);
                     bw.newLine();
                     bw.flush();
+
                     System.out.println("Varsler koordinator om at jeg er ferdig...");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);

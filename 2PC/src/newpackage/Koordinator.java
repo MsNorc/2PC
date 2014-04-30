@@ -5,6 +5,8 @@
  */
 package newpackage;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import static java.lang.Thread.sleep;
 import java.net.DatagramPacket;
@@ -16,7 +18,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import static newpackage.MulticastServerThread.getResponses;
 
 public class Koordinator {
 
@@ -42,12 +43,19 @@ public class Koordinator {
 
     private static int abortCounter = 0;
     private static int maxAborts = 3;
+    
+    private static String taskList = "taskList.txt";
+    private static String task;
+    private static FileReader fr;
+    private static BufferedReader br;
 
     public static void main(String[] args) throws java.io.IOException {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
         group = InetAddress.getByName("230.0.0.1");
-
+        fr = new FileReader(taskList);
+        br = new BufferedReader(fr);
+        
         String nodesText = JOptionPane.showInputDialog("Antall noder:");
         nodes = Integer.parseInt(nodesText);
 
@@ -60,7 +68,7 @@ public class Koordinator {
                 System.out.println("Starter forberedelsesfasen..");
                 prepareNodes();
             }
-            
+
             if (commit) {
                 commit();
             } else {
@@ -136,6 +144,12 @@ public class Koordinator {
                 }
                 if (nodesReady) {
                     commit = true;
+                    String taskToSend = "task ";
+                    taskToSend += br.readLine();
+                    System.out.println(taskToSend);
+                    buf = taskToSend.getBytes();
+                    packet = new DatagramPacket(buf, buf.length, group, 4446);
+                    socket.send(packet);
                 } else {
                     commit = false;
                     abort();
