@@ -72,6 +72,7 @@ public class Koordinator {
             if (commit) {
                 commit();
             } else {
+                System.out.println("Starter utførelsesfasen med svikt...");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -161,6 +162,8 @@ public class Koordinator {
 
     public static void commit() {
         try {
+            System.out.println("Alle noder er klare...");
+            System.out.println("Starter utførelsesfasen med suksess...");
             System.out.println("Gir klarsignal for commit...");
             String goForIt = "commit";
             buf = goForIt.getBytes();
@@ -183,11 +186,14 @@ public class Koordinator {
     }
 
     public static void abort() {
+        System.out.println("En eller flere noder sa at det ikke var klare eller svarte ikke...");
+        
         if (abortCounter >= maxAborts) {
             System.out.println("Har nådd maks antall timeouts eller avslag fra noder...");
             System.out.println("Logger at oppgave ikke blir utført...");
         } else {
             try {
+                
                 abortCounter++;
                 int tempNodes = nodes;
                 System.out.println("Ber alle noder om å avbryte og rulle tilbake...");

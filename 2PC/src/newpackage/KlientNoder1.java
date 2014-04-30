@@ -42,7 +42,7 @@ public class KlientNoder1 {
                     System.out.println("Jeg er klar, og gir respons til koordinator...");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
-                    writer.println("yes");
+                    writer.println("no");
                     System.out.println("Jeg forbereder meg til utførelse...");
                     fw = new FileWriter(fileName, true);
                     bw = new BufferedWriter(fw);
