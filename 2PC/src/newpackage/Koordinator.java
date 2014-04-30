@@ -146,7 +146,6 @@ public class Koordinator {
                     commit = true;
                     String taskToSend = "task ";
                     taskToSend += br.readLine();
-                    System.out.println(taskToSend);
                     buf = taskToSend.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
                     socket.send(packet);
