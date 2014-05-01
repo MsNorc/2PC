@@ -32,7 +32,7 @@ public class ClientNodes {
                 fw.close();
             }
         MulticastSocket socket = new MulticastSocket(4446);
-        InetAddress address = InetAddress.getByName("224.0.0.3");
+        InetAddress address = InetAddress.getByName("224.0.0.1");
         socket.joinGroup(address);
 
         DatagramPacket packet;

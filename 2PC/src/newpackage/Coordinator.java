@@ -54,7 +54,7 @@ public class Coordinator {
     public static void main(String[] args) throws java.io.IOException {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
-        group = InetAddress.getByName("224.0.0.3");
+        group = InetAddress.getByName("224.0.0.1");
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
