@@ -53,7 +53,7 @@ public class ClientNodes {
                 if (received.equals("ready?")) {
                     ClientNodesGUI.textArea.append("Coordinator asks if client is ready for task execution..."+ "\n"+ "\n");
                     ClientNodesGUI.textArea.append("Client ready, signaling coordinator..."+ "\n"+ "\n");
-                    Socket connection = new Socket("localhost", 1250);
+                    Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
                     ClientNodesGUI.textArea.append("Preparing execution..."+ "\n"+ "\n");
@@ -80,7 +80,7 @@ public class ClientNodes {
                     bw.newLine();
                     bw.flush();
                     ClientNodesGUI.textArea.append("Task complete, signaling coordinator..." + "\n"+ "\n");
-                    Socket connection = new Socket("localhost", 1250);
+                    Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println(textToBeWrittenToFile);
 
