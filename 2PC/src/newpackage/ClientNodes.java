@@ -7,6 +7,7 @@ package newpackage;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
 public class ClientNodes {
@@ -18,12 +19,18 @@ public class ClientNodes {
     private static BufferedReader br;
     private static String textToBeWrittenToFile;
     private static String host;
+    private static ArrayList<String> backup;
 
     public static void main(String[] args) throws IOException {
         host = JOptionPane.showInputDialog("Type in host to connect with:");
         if(host.equals("localhost")){
             fileName = JOptionPane.showInputDialog("Type in a uniqe namne for the text-file the client shall write to");
         }
+        if(!new File(fileName).isFile()){
+                fw = new FileWriter(fileName);
+                fw.write("");
+                fw.close();
+            }
         MulticastSocket socket = new MulticastSocket(4446);
         InetAddress address = InetAddress.getByName("230.0.0.1");
         socket.joinGroup(address);
@@ -49,7 +56,15 @@ public class ClientNodes {
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
-                    ClientNodesGUI.textArea.append("Prepering execution..."+ "\n"+ "\n");
+                    ClientNodesGUI.textArea.append("Preparing execution..."+ "\n"+ "\n");
+                    backup = new ArrayList<String>();
+                    fr = new FileReader(fileName);
+                    br = new BufferedReader(fr);
+                    String line = br.readLine();
+                    while(line != null){
+                        backup.add(line);
+                        line = br.readLine();
+                    }
                     fw = new FileWriter(fileName, true);
                     bw = new BufferedWriter(fw);
 
@@ -67,7 +82,7 @@ public class ClientNodes {
                     ClientNodesGUI.textArea.append("Task complete, signaling coordinator..." + "\n"+ "\n");
                     Socket connection = new Socket("localhost", 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
-                    writer.println("done");
+                    writer.println(textToBeWrittenToFile);
 
                 } else if (received.equals("abort")) {
                     ClientNodesGUI.textArea.append("Command to abort and roll back recived..."+ "\n"+ "\n");
@@ -79,6 +94,22 @@ public class ClientNodes {
                     Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("aborted");
+                } else if (received.equals("rollback")){
+                    ClientNodesGUI.textArea.append("Command to rollback last update recived..."+ "\n"+ "\n");
+                    ClientNodesGUI.textArea.append("Rolling back..."+ "\n"+ "\n");
+                    fr = new FileReader(fileName);
+                    br = new BufferedReader(fr);
+                    String check = br.readLine();
+                    if (check.equals(textToBeWrittenToFile)) {
+                        fw = new FileWriter(fileName, false);
+                        bw = new BufferedWriter(fw);
+                        
+                        for(String s : backup){
+                            bw.write(s);
+                            bw.newLine();
+                        }
+                        bw.flush();
+                    }
                 }
             }
         } catch(IOException e){

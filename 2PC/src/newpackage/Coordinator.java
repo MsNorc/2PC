@@ -64,19 +64,19 @@ public class Coordinator {
 
         try {
 
-            CoordinatorGUI.textArea.append("Initializing in 5 seconds..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Initializing in 5 seconds..." + "\n" + "\n");
             sleep(5000);
-            CoordinatorGUI.textArea.append("Starting two-phase commit protocol..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Starting two-phase commit protocol..." + "\n" + "\n");
 
             while (abortCounter < maxAborts && !commit) {
-                CoordinatorGUI.textArea.append("Commencing preparation phase..." + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Commencing preparation phase..." + "\n" + "\n");
                 prepareNodes();
             }
 
             if (commit) {
                 commit();
             } else {
-                CoordinatorGUI.textArea.append("Commenizing completion phase with failures..." + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Commenizing completion phase with failures..." + "\n" + "\n");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -91,11 +91,11 @@ public class Coordinator {
 
     }
 
-    public static void getResponses() throws IOException{
+    public static void getResponses() throws IOException {
         responses = new ArrayList<String>();
         try {
             int counter = 0;
-            CoordinatorGUI.textArea.append("Waiting for response from nodes..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Waiting for response from nodes..." + "\n" + "\n");
             responseSocket.setSoTimeout(5000);
             while (counter < nodes) {
 
@@ -113,14 +113,22 @@ public class Coordinator {
                 hasResponse = true;
             }
             if (hasResponse) {
-                CoordinatorGUI.textArea.append("Recevied response from every node..." + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Recevied response from every node..." + "\n" + "\n");
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                CoordinatorGUI.textArea.append("Timeout has been reached..." + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Timeout has been reached..." + "\n" + "\n");
                 timeout = true;
                 hasResponse = false;
-                abort();
+                if (commit) {
+                    String rollback = "rollback";
+                    buf = rollback.getBytes();
+                    packet = new DatagramPacket(buf, buf.length, group, 4446);
+                    socket.send(packet);
+                    logError();
+                } else {
+                    abort();
+                }
             } else {
                 System.err.println(e);
             }
@@ -130,18 +138,18 @@ public class Coordinator {
 
     public static void prepareNodes() {
         try {
-            CoordinatorGUI.textArea.append("Transmitting ready checks to nodes..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Transmitting ready checks to nodes..." + "\n" + "\n");
             String ready = "ready?";
 
             buf = ready.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
-            CoordinatorGUI.textArea.append("Ready checks sent to nodes..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Ready checks sent to nodes..." + "\n" + "\n");
             getResponses();
             if (hasResponse) {
-                CoordinatorGUI.textArea.append("Responses from nodes regarding ready state: " + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Responses from nodes regarding ready state: " + "\n" + "\n");
                 for (int j = 0; j < nodes; j++) {
-                    CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n"+ "\n");
+                    CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n" + "\n");
                     if (responses.get(j).equals("no")) {
                         nodesReady = false;
                     }
@@ -149,7 +157,9 @@ public class Coordinator {
                 if (nodesReady) {
                     commit = true;
                     String taskToSend = "task ";
-                    taskToSend += br.readLine();
+                    task = br.readLine();
+                    taskToSend += task;
+                    task = null;
                     buf = taskToSend.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
                     socket.send(packet);
@@ -166,21 +176,36 @@ public class Coordinator {
     public static void commit() {
         try {
 
-            CoordinatorGUI.textArea.append("Commenizing completion phase with succses..." + "\n"+ "\n");
-            CoordinatorGUI.textArea.append("Signaling nodes to commit to task..." + "\n"+ "\n");
+            CoordinatorGUI.textArea.append("Commenizing completion phase with succses..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Signaling nodes to commit to task..." + "\n" + "\n");
             String goForIt = "commit";
             buf = goForIt.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
             getResponses();
             if (hasResponse) {
-                CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: " + "\n"+ "\n");
-                for (int j = 0; j < nodes; j++) {
-                    CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n"+ "\n");
+                if (responses.size() == nodes) {
+                    CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: " + "\n" + "\n");
+                    for (int j = 0; j < nodes; j++) {
+                        CoordinatorGUI.textArea.append("done - wrote this to file: " + responses.get(j) + "\n" + "\n");
+                        System.out.println(responses.get(j)+", "+task);
+                        if (!responses.get(j).equals(task)) {
+                            CoordinatorGUI.textArea.append("this response is not approved will singal rollback..." + "\n" + "\n");
+                            done = false;
+                        }
 
-                }
-                if (responses.size() < nodes) {
+                    }
+                } else {
                     done = false;
+                }
+                if (done) {
+                    CoordinatorGUI.textArea.append("Transaction completed succsesfully..." + "\n" + "\n");
+                } else {
+                    String rollback = "rollback";
+                    buf = rollback.getBytes();
+                    packet = new DatagramPacket(buf, buf.length, group, 4446);
+                    socket.send(packet);
+                    logError();
                 }
             }
         } catch (IOException ex) {
@@ -188,39 +213,20 @@ public class Coordinator {
         }
     }
 
-    public static void abort() throws IOException{
-        CoordinatorGUI.textArea.append("One or more nodes did not respond or said it wasn't ready..." + "\n"+ "\n");
+    public static void abort() throws IOException {
+        CoordinatorGUI.textArea.append("One or more nodes did not respond or said it wasn't ready..." + "\n" + "\n");
 
         if (abortCounter >= maxAborts) {
-            try {
-                CoordinatorGUI.textArea.append("Reached maximum number of timeouts and rejections by nodes..." + "\n"+ "\n");
-                CoordinatorGUI.textArea.append("Logging that the current task will not be completed..." + "\n"+ "\n");
-                Date date = new Date();
-                String currentTask = br.readLine();
-                String error = ("The task: " +"'"+ currentTask +"'"+ " was not completed at the date and time " + date.toString());
-                fw = new FileWriter("errorLog.txt", true);
-                bw = new BufferedWriter(fw);
-                bw.write(error);
-                bw.newLine();
-                bw.flush();
-                CoordinatorGUI.textArea.append("Logging complete..." + "\n"+ "\n");
-                
 
-            } catch (IOException ex) {
-                System.err.println(ex);
-            } finally{
-                bw.close();
-                fw.close();
-                br.close();
-                fw.close();
-            }
+            CoordinatorGUI.textArea.append("Reached maximum number of timeouts and rejections by nodes..." + "\n" + "\n");
+            logError();
 
         } else {
             try {
 
                 abortCounter++;
                 int tempNodes = nodes;
-                CoordinatorGUI.textArea.append("Rollback command to each node..." + "\n"+ "\n");
+                CoordinatorGUI.textArea.append("Rollback command to each node..." + "\n" + "\n");
                 String dontDoIt = "abort";
                 buf = dontDoIt.getBytes();
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -231,9 +237,9 @@ public class Coordinator {
                 getResponses();
 
                 if (hasResponse) {
-                    CoordinatorGUI.textArea.append("Abort responses:" + "\n"+ "\n");
+                    CoordinatorGUI.textArea.append("Abort responses:" + "\n" + "\n");
                     for (int j = 0; j < nodes; j++) {
-                        CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n"+ "\n");
+                        CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n" + "\n");
 
                     }
                     if (responses.size() < nodes) {
@@ -248,6 +254,29 @@ public class Coordinator {
             } catch (IOException ex) {
                 System.err.println(ex);
             }
+        }
+    }
+
+    private static void logError() throws IOException {
+        try {
+            CoordinatorGUI.textArea.append("Logging that the current task will not be completed..." + "\n" + "\n");
+            Date date = new Date();
+            String currentTask = br.readLine();
+            String error = ("The task: " + "'" + currentTask + "'" + " was not completed at the date and time " + date.toString());
+            fw = new FileWriter("errorLog.txt", true);
+            bw = new BufferedWriter(fw);
+            bw.write(error);
+            bw.newLine();
+            bw.flush();
+            CoordinatorGUI.textArea.append("Logging complete..." + "\n" + "\n");
+
+        } catch (IOException ex) {
+            System.err.println(ex);
+        } finally {
+            bw.close();
+            fw.close();
+            br.close();
+            fw.close();
         }
     }
 }
