@@ -54,7 +54,7 @@ public class Coordinator {
     public static void main(String[] args) throws java.io.IOException {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
-        group = InetAddress.getByName("230.0.0.1");
+        group = InetAddress.getByName("224.0.0.3");
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
@@ -159,7 +159,6 @@ public class Coordinator {
                     String taskToSend = "task ";
                     task = br.readLine();
                     taskToSend += task;
-                    task = null;
                     buf = taskToSend.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
                     socket.send(packet);
