@@ -51,7 +51,7 @@ public class Coordinator {
     private static FileWriter fw;
     private static BufferedWriter bw;
 
-    public static void main(String[] args) throws java.io.IOException {
+    public static void main(String[] args) throws java.io.IOException { 
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
         group = InetAddress.getByName("224.0.0.1");
