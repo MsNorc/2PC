@@ -5,17 +5,10 @@
  */
 package newpackage;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import static java.lang.Thread.sleep;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
@@ -23,6 +16,8 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 public class Coordinator {
+
+    private static Connection con;
 
     private static DatagramSocket socket = null;
     private static ServerSocket responseSocket;
@@ -51,10 +46,10 @@ public class Coordinator {
     private static FileWriter fw;
     private static BufferedWriter bw;
 
-    public static void main(String[] args) throws java.io.IOException { 
+    public static void main(String[] args) throws java.io.IOException {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
-        group = InetAddress.getByName("224.0.0.1");
+        group = InetAddress.getByName("224.0.1.0");
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
@@ -157,7 +152,7 @@ public class Coordinator {
                 if (nodesReady) {
                     commit = true;
                     String taskToSend = "task ";
-                    task = br.readLine();
+                    task = getTask(1);
                     taskToSend += task;
                     buf = taskToSend.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -170,6 +165,32 @@ public class Coordinator {
         } catch (IOException ex) {
             System.err.println(ex);
         }
+    }
+
+    public static String getTask(int id) {
+        String taskString = "";
+        try {
+            
+            Class.forName("org.apache.derby.jdbc.ClientDriver");
+
+            con = DriverManager.getConnection("jdbc:derby://localhost:1527/Nettverksprog;user=root;password=root");
+
+            ResultSet res;
+            String query = "Select task from tasks where id =" + id;
+            Statement stm = con.createStatement();
+            res = stm.executeQuery(query);
+            if (res.next()) {
+                taskString = res.getString("task");
+            }
+
+            con.close();
+
+        } catch (Exception ex) {
+            System.err.println(ex);
+        }
+
+        return taskString;
+
     }
 
     public static void commit() {
@@ -187,7 +208,7 @@ public class Coordinator {
                     CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: " + "\n" + "\n");
                     for (int j = 0; j < nodes; j++) {
                         CoordinatorGUI.textArea.append("done - wrote this to file: " + responses.get(j) + "\n" + "\n");
-                        System.out.println(responses.get(j)+", "+task);
+                        System.out.println(responses.get(j) + ", " + task);
                         if (!responses.get(j).equals(task)) {
                             CoordinatorGUI.textArea.append("this response is not approved will singal rollback..." + "\n" + "\n");
                             done = false;
