@@ -10,7 +10,7 @@ import java.net.*;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
-public class ClientNodes {
+public class DefectClientNode {
 
     private static String fileName = "clientText.txt";
     private static FileWriter fw;
@@ -32,7 +32,7 @@ public class ClientNodes {
                 fw.close();
             }
         MulticastSocket socket = new MulticastSocket(4446);
-        InetAddress address = InetAddress.getByName("224.0.0.1");
+        InetAddress address = InetAddress.getByName("224.0.1.0");
         socket.joinGroup(address);
 
         DatagramPacket packet;
@@ -73,17 +73,8 @@ public class ClientNodes {
                     ClientNodesGUI.textArea.append("Task received : " + textToBeWrittenToFile + "\n"+ "\n");
                 } else if (received.equals("commit")) {
                     ClientNodesGUI.textArea.append("Coordinator signaling ready for task commit..."+ "\n"+ "\n");
-                    ClientNodesGUI.textArea.append("Executing given task...");
-                    ClientNodesGUI.textArea.append("Writing the following to file : " + textToBeWrittenToFile + "\n"+ "\n");
-                    
-                    bw.write(textToBeWrittenToFile);
-                    bw.newLine();
-                    bw.flush();
-                    ClientNodesGUI.textArea.append("Task complete, signaling coordinator..." + "\n"+ "\n");
-                    Socket connection = new Socket(host, 1250);
-                    PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
-                    writer.println(textToBeWrittenToFile);
-
+                    ClientNodesGUI.textArea.append("Nope! I go to bed!"+ "\n"+ "\n");
+                    break;
                 } else if (received.equals("abort")) {
                     ClientNodesGUI.textArea.append("Command to abort and roll back recived..."+ "\n"+ "\n");
                     ClientNodesGUI.textArea.append("Aborting and rolling back..."+ "\n"+ "\n");
