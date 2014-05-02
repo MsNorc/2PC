@@ -168,10 +168,10 @@ public class Coordinator {
         int id = -1;
         String taskString = "";
         try {
+            
+            Class.forName("com.mysql.jdbc.Driver");
 
-            Class.forName("org.apache.derby.jdbc.ClientDriver");
-
-            con = DriverManager.getConnection("jdbc:derby://localhost:1527/Nettverksprog;user=root;password=root");
+            con = DriverManager.getConnection("jdbc:mysql://mysql.stud.aitel.hist.no:3306/haakojh","haakojh","zuxY.o9L");
 
             ResultSet res;
             String query = "SELECT * FROM tasks";
@@ -183,9 +183,17 @@ public class Coordinator {
                 Task row = new Task(id, taskString);
                 rows.add(row.toString());
             }
-            con.close();
+            res.close();
+            stm.close();
+            
         } catch (ClassNotFoundException | SQLException ex) {
             System.err.println(ex);
+        }finally{
+            try{
+            con.close();
+            } catch(SQLException e){
+                System.err.println(e);
+            }
         }
         return rows;
 

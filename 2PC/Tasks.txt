@@ -4,3 +4,7 @@ ID: 2	Task:	Take back the trash
 ID: 1	Task:	Take out the trash
 ID: 2	Task:	Take back the trash
 
+ID: 1	Task:	Finish this project
+ID: 2	Task:	Grab a beer before exams
+ID: 3	Task:	Cry at the exams
+
