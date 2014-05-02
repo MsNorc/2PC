@@ -6,12 +6,12 @@
 package newpackage;
 
 import java.io.*;
+import java.util.Scanner;
 import static java.lang.Thread.sleep;
 import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
-import javax.swing.JOptionPane;
 
 public class Coordinator {
 
@@ -39,6 +39,7 @@ public class Coordinator {
 
     private static ArrayList<String> tasks;
     private static String taskToSend;
+    private static final Scanner input = new Scanner(System.in);
     private static FileWriter fw;
     private static BufferedWriter bw;
 
@@ -46,26 +47,25 @@ public class Coordinator {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
         group = InetAddress.getByName("224.0.1.0");
-        CoordinatorGUI gui = new CoordinatorGUI();
-        gui.setVisible(true);
-        String nodesIn = JOptionPane.showInputDialog("Input number of nodes:");
+        System.out.print("Input number of nodes: ");
+        String nodesIn = input.next();
         nodes = Integer.parseInt(nodesIn);
 
         try {
 
             System.out.println("Initializing in 5 seconds...\n");
             sleep(5000);
-            System.out.println("Starting two-phase commit protocol...\n");
+            System.out.println("Starting two-phase commit protocol.");
 
             while (abortCounter < MAX_ABORTS && !commit) {
-                System.out.println("Commencing preparation phase...\n");
+                System.out.println("Commencing preparation phase...");
                 prepareNodes();
             }
 
             if (commit) {
                 commit();
             } else {
-                System.out.println("Commencing completion phase with failures...\n\n");
+                System.out.println("\nCommencing completion phase with failures...\n");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -84,7 +84,7 @@ public class Coordinator {
         responses = new ArrayList<>();
         try {
             int counter = 0;
-            System.out.println("Waiting for response from nodes...\n\n");
+            System.out.println("Waiting for response from nodes...\n");
             responseSocket.setSoTimeout(5000);
             while (counter < nodes) {
 
@@ -102,11 +102,11 @@ public class Coordinator {
                 hasResponse = true;
             }
             if (hasResponse) {
-                System.out.println("Recevied response from every node...\n\n");
+                System.out.println("Recevied response from every node.\n");
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                System.out.println("Timeout has been reached...\n\n");
+                System.out.println("Timeout has been reached.");
                 timeout = true;
                 hasResponse = false;
                 if (commit) {
@@ -127,23 +127,22 @@ public class Coordinator {
 
     public static void prepareNodes() {
         try {
-            System.out.println("Transmitting ready checks to nodes...\n");
+            System.out.println("Transmitting ready checks to nodes...");
             String ready = "ready?";
 
             buf = ready.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
-            System.out.println("Ready checks sent to nodes...\n");
+            System.out.println("Ready checks sent to nodes.");
             getResponses();
             if (hasResponse) {
-                System.out.println("Responses from nodes regarding ready state: \n");
+                System.out.println("Responses from nodes regarding ready state: ");
                 for (int j = 0; j < nodes; j++) {
-                    System.out.println(" " + responses.get(j) + "\n");
+                    System.out.println("\t" + responses.get(j));
                     if (responses.get(j).equals("no")) {
                         nodesReady = false;
                     }
                 }
-                System.out.println("\n");
                 if (nodesReady) {
                     commit = true;
                     taskToSend = "task ";
@@ -195,8 +194,8 @@ public class Coordinator {
     public static void commit() {
         try {
 
-            System.out.println("Commencing completion phase with success...\n");
-            System.out.println("Signaling nodes to commit to task...\n");
+            System.out.println("\nCommencing completion phase with success...");
+            System.out.println("Signaling nodes to commit to task.\n");
             String goForIt = "commit";
             buf = goForIt.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -204,11 +203,11 @@ public class Coordinator {
             getResponses();
             if (hasResponse) {
                 if (responses.size() == nodes) {
-                    System.out.println("Responses from nodes regarding completion of task: \n");
+                    System.out.println("Responses from nodes regarding completion of task: ");
                     for (int j = 0; j < nodes; j++) {
-                        System.out.println("Done - wrote this to file:\n" + responses.get(j).replace("\\", "\n") + "\n");
+                        System.out.println("Done - wrote this to file:\n" + responses.get(j).replace("\\", "\n"));
                         if (!responses.get(j).equals(taskToSend.substring(5))) {
-                            System.out.println("The response recieved is not approved, will singal rollback...\n\n");
+                            System.out.println("The response recieved is not approved, will singal rollback...\n");
                             done = false;
                         }
                     }
@@ -216,7 +215,7 @@ public class Coordinator {
                     done = false;
                 }
                 if (done) {
-                    System.out.println("Transaction completed successfully...\n\n");
+                    System.out.println("Transaction completed successfully...\n");
                 } else {
                     String rollback = "rollback";
                     buf = rollback.getBytes();
@@ -231,11 +230,11 @@ public class Coordinator {
     }
 
     public static void abort() throws IOException {
-        System.out.println("One or more nodes did not respond or said it wasn't ready...\n");
+        System.out.println("One or more nodes did not respond or said it wasn't ready...");
 
         if (abortCounter >= MAX_ABORTS) {
 
-            System.out.println("Reached maximum number of timeouts and rejections by nodes...\n");
+            System.out.println("Reached maximum number of timeouts and rejections by nodes...");
             logError();
 
         } else {
@@ -243,7 +242,7 @@ public class Coordinator {
 
                 abortCounter++;
                 int tempNodes = nodes;
-                System.out.println("Rollback command to each node...\n");
+                System.out.println("Rollback command to each node...");
                 String dontDoIt = "abort";
                 buf = dontDoIt.getBytes();
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -254,9 +253,9 @@ public class Coordinator {
                 getResponses();
 
                 if (hasResponse) {
-                    System.out.println("Abort responses:\n");
+                    System.out.println("Abort responses:");
                     for (int j = 0; j < nodes; j++) {
-                        System.out.println(" " + responses.get(j) + "\n\n");
+                        System.out.println(" " + responses.get(j) + "\n");
 
                     }
                     if (responses.size() < nodes) {
@@ -276,7 +275,7 @@ public class Coordinator {
 
     private static void logError() throws IOException {
         try {
-            System.out.println("Logging that the current task will not be completed...\n");
+            System.out.println("Logging that the current task will not be completed...");
             Date date = new Date();
             fw = new FileWriter("errorLog.txt", true);
             bw = new BufferedWriter(fw);
@@ -288,7 +287,7 @@ public class Coordinator {
                 bw.newLine();
                 bw.flush();
             }
-            System.out.println("Logging complete...\n\n");
+            System.out.println("Logging complete...\n");
 
         } catch (IOException ex) {
             System.err.println(ex);
