@@ -10,7 +10,7 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class ClientNode {
+public class DefectNode {
 
     private static String fileName = "clientText.txt";
     private static final Scanner input = new Scanner(System.in);
@@ -71,6 +71,7 @@ public class ClientNode {
 
                 } else if (received.contains("task")) {
                     textToBeWrittenToFile = received.substring(5);
+                    textToBeWrittenToFile = textToBeWrittenToFile.replace("I", "@");
                     String text = textToBeWrittenToFile.replace("\\", "\n");
                     System.out.println("Task received:\n" + text);
                 } else if (received.equals("commit")) {
