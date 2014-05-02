@@ -7,6 +7,7 @@ package newpackage;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -55,6 +56,11 @@ public class Coordinator {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
         group = InetAddress.getByName("224.0.1.0");
+        if (!new File(taskList).isFile()) {
+            fw = new FileWriter(taskList);
+            fw.write("");
+            fw.close();
+        }
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
