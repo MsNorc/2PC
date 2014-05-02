@@ -54,7 +54,7 @@ public class Coordinator {
     public static void main(String[] args) throws java.io.IOException {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
-        group = InetAddress.getByName("224.0.0.1");
+        group = InetAddress.getByName("224.0.1.0");
         fr = new FileReader(taskList);
         br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
@@ -121,6 +121,7 @@ public class Coordinator {
                 timeout = true;
                 hasResponse = false;
                 if (commit) {
+                    CoordinatorGUI.textArea.append("Signaling nodes to rollback..." + "\n" + "\n");
                     String rollback = "rollback";
                     buf = rollback.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -187,7 +188,6 @@ public class Coordinator {
                     CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: " + "\n" + "\n");
                     for (int j = 0; j < nodes; j++) {
                         CoordinatorGUI.textArea.append("done - wrote this to file: " + responses.get(j) + "\n" + "\n");
-                        System.out.println(responses.get(j)+", "+task);
                         if (!responses.get(j).equals(task)) {
                             CoordinatorGUI.textArea.append("this response is not approved will singal rollback..." + "\n" + "\n");
                             done = false;

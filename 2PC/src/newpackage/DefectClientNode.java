@@ -24,7 +24,8 @@ public class DefectClientNode {
     public static void main(String[] args) throws IOException {
         host = JOptionPane.showInputDialog("Type in host to connect with:");
         if(host.equals("localhost")){
-            fileName = JOptionPane.showInputDialog("Type in a uniqe namne for the text-file the client shall write to");
+            fileName = JOptionPane.showInputDialog("Type in a uniqe name for the text-file the client shall write to");
+            fileName += ".txt";
         }
         if(!new File(fileName).isFile()){
                 fw = new FileWriter(fileName);
