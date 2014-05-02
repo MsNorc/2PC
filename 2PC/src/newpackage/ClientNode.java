@@ -47,18 +47,18 @@ public class ClientNode {
 
                 byte[] buf = new byte[512];
                 packet = new DatagramPacket(buf, buf.length);
-                ClientNodesGUI.textArea.append("Awaiting request..."+ "\n"+ "\n");
+                System.out.println("Awaiting request..."+ "\n"+ "\n");
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
-                ClientNodesGUI.textArea.append("Request received..."+ "\n"+ "\n");
+                System.out.println("Request received..."+ "\n"+ "\n");
                 if (received.equals("ready?")) {
-                    ClientNodesGUI.textArea.append("Coordinator asks if client is ready for task execution..."+ "\n"+ "\n");
-                    ClientNodesGUI.textArea.append("Client ready, signaling coordinator..."+ "\n"+ "\n");
+                    System.out.println("Coordinator asks if client is ready for task execution..."+ "\n"+ "\n");
+                    System.out.println("Client ready, signaling coordinator..."+ "\n"+ "\n");
                     Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("yes");
-                    ClientNodesGUI.textArea.append("Preparing execution..."+ "\n"+ "\n");
-                    backup = new ArrayList<String>();
+                    System.out.println("Preparing execution..."+ "\n"+ "\n");
+                    backup = new ArrayList<>();
                     fr = new FileReader(fileName);
                     br = new BufferedReader(fr);
                     String line = br.readLine();
@@ -71,33 +71,36 @@ public class ClientNode {
 
                 } else if (received.contains("task")) {
                     textToBeWrittenToFile = received.substring(5);
-                    ClientNodesGUI.textArea.append("Task received : " + textToBeWrittenToFile + "\n"+ "\n");
+                    String text = textToBeWrittenToFile.replace("\\", "\n");
+                    System.out.println("Task received:\n" + text + "\n");
                 } else if (received.equals("commit")) {
-                    ClientNodesGUI.textArea.append("Coordinator signaling ready for task commit..."+ "\n"+ "\n");
-                    ClientNodesGUI.textArea.append("Executing given task...");
-                    ClientNodesGUI.textArea.append("Writing the following to file: " + textToBeWrittenToFile + "\n"+ "\n");
+                    String text = textToBeWrittenToFile.replace("\\", "\n");
+                    System.out.println("Coordinator signaling ready for task commit..."+ "\n");
+                    System.out.println("Executing given task...\n");
+                    System.out.println("Writing the following to file:\n" + text + "\n");
                     
-                    bw.write(textToBeWrittenToFile);
+                    bw.write(text);
                     bw.newLine();
                     bw.flush();
-                    ClientNodesGUI.textArea.append("Task complete, signaling coordinator..." + "\n"+ "\n");
+                    
+                    System.out.println("Task complete, signaling coordinator..." + "\n"+ "\n");
                     Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println(textToBeWrittenToFile);
 
                 } else if (received.equals("abort")) {
-                    ClientNodesGUI.textArea.append("Command to abort and roll back recived..."+ "\n"+ "\n");
-                    ClientNodesGUI.textArea.append("Aborting and rolling back..."+ "\n"+ "\n");
+                    System.out.println("Command to abort and roll back recived..."+ "\n");
+                    System.out.println("Aborting and rolling back..."+ "\n");
                     textToBeWrittenToFile = null;
                     fw = null;
                     bw = null;
-                    ClientNodesGUI.textArea.append("Signaling coordinator, task aborted and rolled back..."+ "\n"+ "\n");
+                    System.out.println("Signaling coordinator, task aborted and rolled back...\n\n");
                     Socket connection = new Socket(host, 1250);
                     PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);
                     writer.println("aborted");
                 } else if (received.equals("rollback")){
-                    ClientNodesGUI.textArea.append("Command to rollback last update recived..."+ "\n"+ "\n");
-                    ClientNodesGUI.textArea.append("Rolling back..."+ "\n"+ "\n");
+                    System.out.println("Command to rollback last update recived...\n");
+                    System.out.println("Rolling back...\n\n");
                     fr = new FileReader(fileName);
                     br = new BufferedReader(fr);
                     String check = br.readLine();
