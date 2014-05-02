@@ -24,7 +24,7 @@ import javax.swing.JOptionPane;
 
 public class Coordinator {
 
-    private static DatagramSocket socket = null;
+    private static DatagramSocket socket;
     private static ServerSocket responseSocket;
     private static int nodes = 0;
     private static ArrayList<String> responses;
