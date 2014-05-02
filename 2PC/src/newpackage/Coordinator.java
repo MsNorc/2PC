@@ -11,8 +11,6 @@ import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 public class Coordinator {
@@ -24,7 +22,7 @@ public class Coordinator {
     private static int nodes = 0;
     private static ArrayList<String> responses;
 
-    private static byte[] buf = new byte[256];
+    private static byte[] buf = new byte[512];
     private static DatagramPacket packet;
     private static InetAddress group;
 
@@ -39,10 +37,8 @@ public class Coordinator {
     private static int abortCounter = 0;
     private static int maxAborts = 3;
 
-    private static String taskList = "taskList.txt";
-    private static String task;
-    private static FileReader fr;
-    private static BufferedReader br;
+    private static ArrayList<String> tasks;
+    private static String taskToSend;
     private static FileWriter fw;
     private static BufferedWriter bw;
 
@@ -50,28 +46,26 @@ public class Coordinator {
         responseSocket = new ServerSocket(1250);
         socket = new DatagramSocket(4445);
         group = InetAddress.getByName("224.0.1.0");
-        fr = new FileReader(taskList);
-        br = new BufferedReader(fr);
         CoordinatorGUI gui = new CoordinatorGUI();
         gui.setVisible(true);
-        String nodesText = JOptionPane.showInputDialog("Input number of nodes:");
-        nodes = Integer.parseInt(nodesText);
+        String nodesIn = JOptionPane.showInputDialog("Input number of nodes:");
+        nodes = Integer.parseInt(nodesIn);
 
         try {
 
-            CoordinatorGUI.textArea.append("Initializing in 5 seconds..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Initializing in 5 seconds...\n\n");
             sleep(5000);
-            CoordinatorGUI.textArea.append("Starting two-phase commit protocol..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Starting two-phase commit protocol...\n\n");
 
             while (abortCounter < maxAborts && !commit) {
-                CoordinatorGUI.textArea.append("Commencing preparation phase..." + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Commencing preparation phase...\n\n");
                 prepareNodes();
             }
 
             if (commit) {
                 commit();
             } else {
-                CoordinatorGUI.textArea.append("Commenizing completion phase with failures..." + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Commenizing completion phase with failures...\n\n");
                 abort();
             }
         } catch (InterruptedException e) {
@@ -90,7 +84,7 @@ public class Coordinator {
         responses = new ArrayList<String>();
         try {
             int counter = 0;
-            CoordinatorGUI.textArea.append("Waiting for response from nodes..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Waiting for response from nodes...\n\n");
             responseSocket.setSoTimeout(5000);
             while (counter < nodes) {
 
@@ -108,11 +102,11 @@ public class Coordinator {
                 hasResponse = true;
             }
             if (hasResponse) {
-                CoordinatorGUI.textArea.append("Recevied response from every node..." + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Recevied response from every node...\n\n");
             }
         } catch (InterruptedException | IOException e) {
             if (e.getMessage().contains("Accept timed out")) {
-                CoordinatorGUI.textArea.append("Timeout has been reached..." + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Timeout has been reached...\n\n");
                 timeout = true;
                 hasResponse = false;
                 if (commit) {
@@ -133,27 +127,30 @@ public class Coordinator {
 
     public static void prepareNodes() {
         try {
-            CoordinatorGUI.textArea.append("Transmitting ready checks to nodes..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Transmitting ready checks to nodes...\n\n");
             String ready = "ready?";
 
             buf = ready.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
             socket.send(packet);
-            CoordinatorGUI.textArea.append("Ready checks sent to nodes..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Ready checks sent to nodes...\n\n");
             getResponses();
             if (hasResponse) {
-                CoordinatorGUI.textArea.append("Responses from nodes regarding ready state: " + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Responses from nodes regarding ready state: \n\n");
                 for (int j = 0; j < nodes; j++) {
-                    CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n" + "\n");
+                    CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n\n");
                     if (responses.get(j).equals("no")) {
                         nodesReady = false;
                     }
                 }
                 if (nodesReady) {
                     commit = true;
-                    String taskToSend = "task ";
-                    task = getTask(1);
-                    taskToSend += task;
+                    taskToSend = "task ";
+                    tasks = getTasks();
+                    for (String row : tasks) {
+                        taskToSend += row + "\n";
+                    }
+                    System.out.println(taskToSend);
                     buf = taskToSend.getBytes();
                     packet = new DatagramPacket(buf, buf.length, group, 4446);
                     socket.send(packet);
@@ -167,37 +164,39 @@ public class Coordinator {
         }
     }
 
-    public static String getTask(int id) {
+    public static ArrayList<String> getTasks() {
+        ArrayList<String> rows = new ArrayList<>();
+        int id = -1;
         String taskString = "";
         try {
-            
+
             Class.forName("org.apache.derby.jdbc.ClientDriver");
 
             con = DriverManager.getConnection("jdbc:derby://localhost:1527/Nettverksprog;user=root;password=root");
 
             ResultSet res;
-            String query = "Select task from tasks where id =" + id;
+            String query = "SELECT * FROM tasks";
             Statement stm = con.createStatement();
             res = stm.executeQuery(query);
-            if (res.next()) {
+            while (res.next()) {
+                id = res.getInt("id");
                 taskString = res.getString("task");
+                Task row = new Task(id, taskString);
+                rows.add(row.toString());
             }
-
             con.close();
-
-        } catch (Exception ex) {
+        } catch (ClassNotFoundException | SQLException ex) {
             System.err.println(ex);
         }
-
-        return taskString;
+        return rows;
 
     }
 
     public static void commit() {
         try {
 
-            CoordinatorGUI.textArea.append("Commenizing completion phase with succses..." + "\n" + "\n");
-            CoordinatorGUI.textArea.append("Signaling nodes to commit to task..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Commencing completion phase with succses...\n\n");
+            CoordinatorGUI.textArea.append("Signaling nodes to commit to task...\n\n");
             String goForIt = "commit";
             buf = goForIt.getBytes();
             packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -205,12 +204,12 @@ public class Coordinator {
             getResponses();
             if (hasResponse) {
                 if (responses.size() == nodes) {
-                    CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: " + "\n" + "\n");
+                    CoordinatorGUI.textArea.append("Responses from nodes regarding completion of task: \n\n");
                     for (int j = 0; j < nodes; j++) {
-                        CoordinatorGUI.textArea.append("done - wrote this to file: " + responses.get(j) + "\n" + "\n");
-                        System.out.println(responses.get(j) + ", " + task);
-                        if (!responses.get(j).equals(task)) {
-                            CoordinatorGUI.textArea.append("this response is not approved will singal rollback..." + "\n" + "\n");
+                        CoordinatorGUI.textArea.append("Done - wrote this to file: " + responses.get(j) + "\n" + "\n");
+                        System.out.println(responses.get(j) + ", " + taskToSend.substring(5));
+                        if (!responses.get(j).equals(taskToSend.substring(5))) {
+                            CoordinatorGUI.textArea.append("The response recieved is not approved, will singal rollback...\n\n");
                             done = false;
                         }
 
@@ -219,7 +218,7 @@ public class Coordinator {
                     done = false;
                 }
                 if (done) {
-                    CoordinatorGUI.textArea.append("Transaction completed succsesfully..." + "\n" + "\n");
+                    CoordinatorGUI.textArea.append("Transaction completed successfully...\n\n");
                 } else {
                     String rollback = "rollback";
                     buf = rollback.getBytes();
@@ -234,11 +233,11 @@ public class Coordinator {
     }
 
     public static void abort() throws IOException {
-        CoordinatorGUI.textArea.append("One or more nodes did not respond or said it wasn't ready..." + "\n" + "\n");
+        CoordinatorGUI.textArea.append("One or more nodes did not respond or said it wasn't ready...\n\n");
 
         if (abortCounter >= maxAborts) {
 
-            CoordinatorGUI.textArea.append("Reached maximum number of timeouts and rejections by nodes..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Reached maximum number of timeouts and rejections by nodes...\n\n");
             logError();
 
         } else {
@@ -246,7 +245,7 @@ public class Coordinator {
 
                 abortCounter++;
                 int tempNodes = nodes;
-                CoordinatorGUI.textArea.append("Rollback command to each node..." + "\n" + "\n");
+                CoordinatorGUI.textArea.append("Rollback command to each node...\n\n");
                 String dontDoIt = "abort";
                 buf = dontDoIt.getBytes();
                 packet = new DatagramPacket(buf, buf.length, group, 4446);
@@ -257,7 +256,7 @@ public class Coordinator {
                 getResponses();
 
                 if (hasResponse) {
-                    CoordinatorGUI.textArea.append("Abort responses:" + "\n" + "\n");
+                    CoordinatorGUI.textArea.append("Abort responses:\n\n");
                     for (int j = 0; j < nodes; j++) {
                         CoordinatorGUI.textArea.append(" " + responses.get(j) + "\n" + "\n");
 
@@ -279,23 +278,24 @@ public class Coordinator {
 
     private static void logError() throws IOException {
         try {
-            CoordinatorGUI.textArea.append("Logging that the current task will not be completed..." + "\n" + "\n");
+            CoordinatorGUI.textArea.append("Logging that the current task will not be completed...\n\n");
             Date date = new Date();
-            String currentTask = br.readLine();
-            String error = ("The task: " + "'" + currentTask + "'" + " was not completed at the date and time " + date.toString());
             fw = new FileWriter("errorLog.txt", true);
             bw = new BufferedWriter(fw);
-            bw.write(error);
-            bw.newLine();
-            bw.flush();
-            CoordinatorGUI.textArea.append("Logging complete..." + "\n" + "\n");
+            ArrayList<String> tasks = getTasks();
+            String error;
+            for (String task : tasks) {
+                error = (date.toString()) + "\t" +  task + ", could not be executed.";
+                bw.write(error);
+                bw.newLine();
+                bw.flush();
+            }
+            CoordinatorGUI.textArea.append("Logging complete...\n\n");
 
         } catch (IOException ex) {
             System.err.println(ex);
         } finally {
             bw.close();
-            fw.close();
-            br.close();
             fw.close();
         }
     }

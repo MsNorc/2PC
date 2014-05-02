@@ -24,7 +24,8 @@ public class ClientNode {
     public static void main(String[] args) throws IOException {
         host = JOptionPane.showInputDialog("Type in host to connect with:");
         if(host.equals("localhost")){
-            fileName = JOptionPane.showInputDialog("Type in a uniqe namne for the text-file the client shall write to");
+            fileName = JOptionPane.showInputDialog("Type in a uniqe name for the text-file the client shall write to");
+            fileName = fileName + ".txt";
         }
         if(!new File(fileName).isFile()){
                 fw = new FileWriter(fileName);
@@ -44,7 +45,7 @@ public class ClientNode {
             boolean run = true;
             while (run) {
 
-                byte[] buf = new byte[256];
+                byte[] buf = new byte[512];
                 packet = new DatagramPacket(buf, buf.length);
                 ClientNodesGUI.textArea.append("Awaiting request..."+ "\n"+ "\n");
                 socket.receive(packet);
@@ -74,7 +75,7 @@ public class ClientNode {
                 } else if (received.equals("commit")) {
                     ClientNodesGUI.textArea.append("Coordinator signaling ready for task commit..."+ "\n"+ "\n");
                     ClientNodesGUI.textArea.append("Executing given task...");
-                    ClientNodesGUI.textArea.append("Writing the following to file : " + textToBeWrittenToFile + "\n"+ "\n");
+                    ClientNodesGUI.textArea.append("Writing the following to file: " + textToBeWrittenToFile + "\n"+ "\n");
                     
                     bw.write(textToBeWrittenToFile);
                     bw.newLine();
